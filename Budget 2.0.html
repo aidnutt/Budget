@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7F5EF;
+    --paper-raised:#FDFCF8;
+    --ink:#232320;
+    --ink-soft:#7A7462;
+    --ink-faint:#A9A28D;
+    --rule:#DDD6C6;
+    --rule-strong:#C7BEA8;
+    --green:#2F6B4F;
+    --green-soft:#E7EFE9;
+    --rust:#9B3E2E;
+    --rust-soft:#F3E7E3;
+    --gold:#B8902E;
+    --gold-soft:#F3E9D2;
+    --grey-soft:#EDEAE1;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  .wrap{
+    max-width:480px;
+    margin:0 auto;
+    padding:0 18px;
+  }
+  .num{
+    font-family:'IBM Plex Mono',monospace;
+    font-variant-numeric:tabular-nums;
+  }
+  /* ---------- Header / month nav ---------- */
+  .topbar{
+    padding:22px 18px 0 18px;
+    max-width:480px;
+    margin:0 auto;
+  }
+  .brand{
+    font-family:'Fraunces',serif;
+    font-size:22px;
+    font-weight:600;
+    letter-spacing:-0.01em;
+    margin:0 0 16px 0;
+    color:var(--ink);
+  }
+  .month-nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border-top:1px solid var(--rule);
+    border-bottom:1px solid var(--rule);
+    padding:10px 0;
+  }
+  .month-nav button{
+    background:none;
+    border:none;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:18px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    padding:4px 10px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .month-nav button:active{color:var(--ink);}
+  .month-label{
+    font-family:'Fraunces',serif;
+    font-size:19px;
+    font-weight:500;
+    text-align:center;
+    flex:1;
+    cursor:pointer;
+  }
+  .month-picker{
+    display:none;
+    padding:10px 0 0 0;
+    text-align:center;
+  }
+  .month-picker.open{display:block;}
+  .month-picker input{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:15px;
+    border:1px solid var(--rule-strong);
+    border-radius:6px;
+    padding:6px 10px;
+    background:var(--paper-raised);
+    color:var(--ink);
+  }
+  /* ---------- Net hero + summary ---------- */
+  .net-hero{
+    padding:20px 0 14px 0;
+  }
+  .net-hero .lbl{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:2px;
+  }
+  .net-hero .val{
+    font-family:'Fraunces',serif;
+    font-size:38px;
+    font-weight:600;
+    line-height:1.1;
+    letter-spacing:-0.01em;
+  }
+  .net-pos{color:var(--green);}
+  .net-neg{color:var(--rust);}
+  .mini-summary{
+    display:flex;
+    gap:24px;
+    padding-bottom:18px;
+    border-bottom:1px solid var(--rule);
+  }
+  .mini-stat .lbl{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-bottom:3px;
+  }
+  .mini-stat .val{
+    font-size:16px;
+    font-weight:500;
+  }
+  .mini-stat.income .val{color:var(--green);}
+  .mini-stat.expense .val{color:var(--rust);}
+  /* ---------- Sections ---------- */
+  .section{
+    margin-top:26px;
+  }
+  .section.compact{
+    margin-top:30px;
+    padding-top:4px;
+  }
+  .section-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:6px;
+  }
+  .section-title{
+    font-family:'Fraunces',serif;
+    font-size:16px;
+    font-weight:600;
+  }
+  .section-title.small{
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    text-transform:none;
+  }
+  .add-btn{
+    background:none;
+    border:none;
+    color:var(--gold);
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    font-weight:500;
+    cursor:pointer;
+    padding:2px 4px;
+  }
+  .add-btn.small{font-size:12.5px;}
+  .add-btn:active{opacity:0.6;}
+  .list{
+    border-top:1px solid var(--rule);
+  }
+  .row{
+    display:flex;
+    align-items:center;
+    padding:11px 0;
+    border-bottom:1px solid var(--rule);
+    gap:10px;
+  }
+  .row-main{
+    flex:1;
+    min-width:0;
+  }
+  .row-title{
+    font-size:14.5px;
+    font-weight:500;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .row-sub{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:2px;
+    display:flex;
+    gap:6px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .card-tag{
+    display:inline-block;
+    font-size:11px;
+    padding:1px 7px;
+    border-radius:20px;
+    background:var(--gold-soft);
+    color:#7A5E1E;
+    font-weight:500;
+    white-space:nowrap;
+  }
+  .cat-tag{
+    display:inline-block;
+    font-size:11px;
+    padding:1px 7px;
+    border-radius:20px;
+    background:var(--grey-soft);
+    color:var(--ink-soft);
+    font-weight:500;
+    white-space:nowrap;
+  }
+  .row-amt{
+    font-size:14.5px;
+    font-weight:500;
+    white-space:nowrap;
+  }
+  .row-amt.income{color:var(--green);}
+  .row-amt.expense{color:var(--rust);}
+  .row-del{
+    background:none;
+    border:none;
+    color:var(--ink-faint);
+    font-size:16px;
+    cursor:pointer;
+    padding:2px 4px;
+    line-height:1;
+    flex-shrink:0;
+  }
+  .row-del:active{color:var(--rust);}
+  .empty{
+    padding:16px 0;
+    color:var(--ink-faint);
+    font-size:13.5px;
+    font-style:italic;
+  }
+  /* ---------- Forms ---------- */
+  .form{
+    display:none;
+    background:var(--paper-raised);
+    border:1px solid var(--rule-strong);
+    border-radius:var(--radius);
+    padding:14px;
+    margin-top:8px;
+  }
+  .form.open{display:block;}
+  .field{
+    margin-bottom:10px;
+    min-width:0;
+  }
+  .field label{
+    display:block;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-bottom:4px;
+  }
+  .field input, .field select{
+    width:100%;
+    max-width:100%;
+    font-family:'Inter',sans-serif;
+    font-size:14.5px;
+    padding:8px 10px;
+    border:1px solid var(--rule-strong);
+    border-radius:6px;
+    background:#fff;
+    color:var(--ink);
+  }
+  .field input.num-input{font-family:'IBM Plex Mono',monospace;}
+  .form-row{
+    display:flex;
+    gap:8px;
+  }
+  .form-row .field{
+    flex:1 1 0;
+    min-width:0;
+  }
+  .form-actions{
+    display:flex;
+    gap:8px;
+    margin-top:12px;
+  }
+  .btn{
+    flex:1;
+    padding:9px 0;
+    border-radius:6px;
+    border:none;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .btn-primary{background:var(--ink); color:var(--paper-raised);}
+  .btn-primary:active{opacity:0.8;}
+  .btn-ghost{background:none; color:var(--ink-soft); border:1px solid var(--rule-strong);}
+  /* ---------- 6-month net ---------- */
+  .trend-list{
+    border-top:1px solid var(--rule);
+  }
+  .trend-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:8px 0;
+    border-bottom:1px solid var(--rule);
+    font-size:13.5px;
+  }
+  .trend-row .m-label{color:var(--ink-soft);}
+  .trend-row .m-label.current{color:var(--ink); font-weight:600;}
+  .trend-row .m-val{font-weight:500;}
+  .trend-total{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 0 4px 0;
+    font-size:13.5px;
+    font-weight:600;
+  }
+  /* ---------- Cards manager (compact, deprioritized) ---------- */
+  .cards-section{
+    margin-top:34px;
+    padding-top:16px;
+    border-top:1px solid var(--rule);
+  }
+  .card-chip-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    padding-top:8px;
+  }
+  .card-chip{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    background:var(--paper-raised);
+    border:1px solid var(--rule-strong);
+    border-radius:20px;
+    padding:3px 8px 3px 7px;
+    font-size:12px;
+  }
+  .card-chip .dot{
+    width:7px;height:7px;border-radius:50%;
+    flex-shrink:0;
+  }
+  .card-chip .rm{
+    background:none;border:none;color:var(--ink-faint);
+    font-size:13px;cursor:pointer;padding:0 2px;line-height:1;
+  }
+  .swatches{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;}
+  .swatch{
+    width:22px;height:22px;border-radius:50%;
+    border:2px solid transparent;cursor:pointer;
+    flex-shrink:0;
+  }
+  .swatch.sel{border-color:var(--ink);}
+  footer{
+    max-width:480px;
+    margin:34px auto 0 auto;
+    padding:0 18px;
+    color:var(--ink-faint);
+    font-size:11.5px;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Ledger</div>
+  <div class="month-nav">
+    <button id="prevMonth">‹</button>
+    <div class="month-label" id="monthLabel">September 2026</div>
+    <button id="nextMonth">›</button>
+  </div>
+  <div class="month-picker" id="monthPicker">
+    <input type="month" id="monthInput">
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="net-hero">
+    <div class="lbl">Net this month</div>
+    <div class="val num" id="sumNet">$0.00</div>
+  </div>
+  <div class="mini-summary">
+    <div class="mini-stat income">
+      <div class="lbl">Income</div>
+      <div class="val num" id="sumIncome">$0.00</div>
+    </div>
+    <div class="mini-stat expense">
+      <div class="lbl">Expenses</div>
+      <div class="val num" id="sumExpense">$0.00</div>
+    </div>
+  </div>
+
+  <!-- INCOME -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">Income</div>
+      <button class="add-btn" id="toggleIncomeForm">+ Add</button>
+    </div>
+    <div class="form" id="incomeForm">
+      <div class="form-row">
+        <div class="field">
+          <label>Source</label>
+          <input type="text" id="incomeSource" placeholder="e.g. Paycheck">
+        </div>
+        <div class="field">
+          <label>Amount</label>
+          <input type="number" step="0.01" class="num-input" id="incomeAmount" placeholder="0.00">
+        </div>
+      </div>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="incomeDate">
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" id="cancelIncome">Cancel</button>
+        <button class="btn btn-primary" id="saveIncome">Save income</button>
+      </div>
+    </div>
+    <div class="list" id="incomeList"></div>
+  </div>
+
+  <!-- EXPENSES -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">Expenses</div>
+      <button class="add-btn" id="toggleExpenseForm">+ Add</button>
+    </div>
+    <div class="form" id="expenseForm">
+      <div class="field">
+        <label>Description</label>
+        <input type="text" id="expenseDesc" placeholder="e.g. Groceries">
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Amount</label>
+          <input type="number" step="0.01" class="num-input" id="expenseAmount" placeholder="0.00">
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <input type="text" id="expenseCategory" list="categoryList" placeholder="e.g. Groceries">
+        </div>
+      </div>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="expenseDate">
+      </div>
+      <div class="field">
+        <label>Card</label>
+        <select id="expenseCard"></select>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" id="cancelExpense">Cancel</button>
+        <button class="btn btn-primary" id="saveExpense">Save expense</button>
+      </div>
+    </div>
+    <div class="list" id="expenseList"></div>
+  </div>
+
+  <!-- RECURRING -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">Recurring expenses</div>
+      <button class="add-btn" id="toggleRecurForm">+ Add</button>
+    </div>
+    <div class="form" id="recurForm">
+      <div class="field">
+        <label>Name</label>
+        <input type="text" id="recurName" placeholder="e.g. Rent">
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Amount</label>
+          <input type="number" step="0.01" class="num-input" id="recurAmount" placeholder="0.00">
+        </div>
+        <div class="field">
+          <label>Day of month</label>
+          <input type="number" min="1" max="31" class="num-input" id="recurDay" placeholder="1">
+        </div>
+      </div>
+      <div class="field">
+        <label>Category</label>
+        <input type="text" id="recurCategory" list="categoryList" placeholder="e.g. Housing">
+      </div>
+      <div class="field">
+        <label>Default card</label>
+        <select id="recurCard"></select>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" id="cancelRecur">Cancel</button>
+        <button class="btn btn-primary" id="saveRecur">Save recurring</button>
+      </div>
+    </div>
+    <div class="list" id="recurList"></div>
+  </div>
+
+  <!-- 6-MONTH NET -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">6-month net</div>
+    </div>
+    <div class="trend-list" id="trendList"></div>
+    <div class="trend-total" id="trendTotal"></div>
+  </div>
+
+  <!-- CARDS (compact, deprioritized) -->
+  <div class="cards-section">
+    <div class="section-head">
+      <div class="section-title small">Cards</div>
+      <button class="add-btn small" id="toggleCardForm">+ Add card</button>
+    </div>
+    <div class="card-chip-list" id="cardChipList"></div>
+    <div class="form" id="cardForm">
+      <div class="field">
+        <label>Card name</label>
+        <input type="text" id="cardName" placeholder="e.g. Chase Freedom">
+      </div>
+      <div class="field">
+        <label>Color</label>
+        <div class="swatches" id="cardSwatches"></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" id="cancelCard">Cancel</button>
+        <button class="btn btn-primary" id="saveCard">Save card</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<datalist id="categoryList"></datalist>
+
+<footer>Stored only on this device.</footer>
+
+<script>
+(function(){
+  var STORAGE_KEY = 'ledgerAppData_v1';
+  var SWATCH_COLORS = ['#2F6B4F','#9B3E2E','#B8902E','#3B5B8C','#6B4E8C','#5E7A6B','#8C5E3B','#4A4A48'];
+
+  function loadData(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(!parsed.cards) parsed.cards = [];
+        if(!parsed.recurring) parsed.recurring = [];
+        if(!parsed.months) parsed.months = {};
+        return parsed;
+      }
+    }catch(e){}
+    return { cards: [], recurring: [], months: {} };
+  }
+  function saveData(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  var data = loadData();
+
+  function uid(){ return Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
+
+  var now = new Date();
+  var currentMonthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+
+  var MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  function ensureMonth(key){
+    if(!data.months[key]){
+      data.months[key] = { income: [], expenses: [] };
+    }
+    return data.months[key];
+  }
+
+  // Auto-populate recurring expenses into a month that don't already have an instance there
+  function populateRecurring(key){
+    var month = ensureMonth(key);
+    var existingRecurIds = month.expenses.filter(function(e){ return e.recurringId; }).map(function(e){ return e.recurringId; });
+    data.recurring.forEach(function(r){
+      if(existingRecurIds.indexOf(r.id) === -1){
+        var yr = parseInt(key.split('-')[0]), mo = parseInt(key.split('-')[1]);
+        var day = Math.min(r.day || 1, new Date(yr, mo, 0).getDate());
+        var dateStr = key + '-' + String(day).padStart(2,'0');
+        month.expenses.push({
+          id: uid(),
+          desc: r.name,
+          amount: r.amount,
+          date: dateStr,
+          cardId: r.cardId || '',
+          category: r.category || '',
+          recurringId: r.id
+        });
+      }
+    });
+    saveData();
+  }
+
+  function fmtMoney(n){
+    var v = Math.abs(n);
+    return '$' + v.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function fmtDate(str){
+    if(!str) return '';
+    var parts = str.split('-');
+    var d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+    return (d.getMonth()+1) + '/' + d.getDate();
+  }
+
+  function cardById(id){
+    return data.cards.find(function(c){ return c.id === id; });
+  }
+
+  function monthTotals(key){
+    var m = data.months[key];
+    if(!m) return { income: 0, expenses: 0 };
+    var income = m.income.reduce(function(s,i){ return s + Number(i.amount||0); }, 0);
+    var expenses = m.expenses.reduce(function(s,e){ return s + Number(e.amount||0); }, 0);
+    return { income: income, expenses: expenses };
+  }
+
+  function shiftKey(key, delta){
+    var parts = key.split('-');
+    var d = new Date(parseInt(parts[0]), parseInt(parts[1])-1 + delta, 1);
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  }
+
+  // ---------- Rendering ----------
+  function renderMonthLabel(){
+    var parts = currentMonthKey.split('-');
+    var yr = parts[0], mo = parseInt(parts[1]);
+    document.getElementById('monthLabel').textContent = MONTH_NAMES[mo-1] + ' ' + yr;
+    document.getElementById('monthInput').value = currentMonthKey;
+  }
+
+  function renderCards(){
+    var list = document.getElementById('cardChipList');
+    list.innerHTML = '';
+    if(data.cards.length === 0){
+      list.innerHTML = '<div class="empty">No cards yet.</div>';
+    }
+    data.cards.forEach(function(c){
+      var chip = document.createElement('div');
+      chip.className = 'card-chip';
+      chip.innerHTML = '<span class="dot" style="background:'+c.color+'"></span><span>'+escapeHtml(c.name)+'</span><button class="rm" data-id="'+c.id+'">×</button>';
+      list.appendChild(chip);
+    });
+    list.querySelectorAll('.rm').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.getAttribute('data-id');
+        data.cards = data.cards.filter(function(c){ return c.id !== id; });
+        saveData();
+        renderAll();
+      });
+    });
+    // populate selects
+    [document.getElementById('recurCard'), document.getElementById('expenseCard')].forEach(function(sel){
+      var currentVal = sel.value;
+      sel.innerHTML = '<option value="">No card</option>' + data.cards.map(function(c){
+        return '<option value="'+c.id+'">'+escapeHtml(c.name)+'</option>';
+      }).join('');
+      sel.value = currentVal;
+    });
+  }
+
+  function renderCategoryOptions(){
+    var cats = {};
+    data.recurring.forEach(function(r){ if(r.category) cats[r.category] = true; });
+    Object.keys(data.months).forEach(function(k){
+      data.months[k].expenses.forEach(function(e){ if(e.category) cats[e.category] = true; });
+    });
+    var dl = document.getElementById('categoryList');
+    dl.innerHTML = Object.keys(cats).sort().map(function(c){ return '<option value="'+escapeHtml(c)+'">'; }).join('');
+  }
+
+  function renderRecurring(){
+    var list = document.getElementById('recurList');
+    list.innerHTML = '';
+    if(data.recurring.length === 0){
+      list.innerHTML = '<div class="empty">No recurring expenses set up yet.</div>';
+      return;
+    }
+    data.recurring.slice().sort(function(a,b){ return (a.day||1)-(b.day||1); }).forEach(function(r){
+      var card = cardById(r.cardId);
+      var row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML =
+        '<div class="row-main">' +
+          '<div class="row-title">'+escapeHtml(r.name)+'</div>' +
+          '<div class="row-sub">Day '+(r.day||1)+
+            (r.category ? ' · <span class="cat-tag">'+escapeHtml(r.category)+'</span>' : '') +
+            (card ? ' <span class="card-tag">'+escapeHtml(card.name)+'</span>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="row-amt expense num">'+fmtMoney(r.amount)+'</div>' +
+        '<button class="row-del" data-id="'+r.id+'">×</button>';
+      list.appendChild(row);
+    });
+    list.querySelectorAll('.row-del').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.getAttribute('data-id');
+        data.recurring = data.recurring.filter(function(r){ return r.id !== id; });
+        saveData();
+        renderAll();
+      });
+    });
+  }
+
+  function renderIncome(){
+    var month = ensureMonth(currentMonthKey);
+    var list = document.getElementById('incomeList');
+    list.innerHTML = '';
+    if(month.income.length === 0){
+      list.innerHTML = '<div class="empty">No income logged this month.</div>';
+      return;
+    }
+    month.income.slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); }).forEach(function(inc){
+      var row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML =
+        '<div class="row-main">' +
+          '<div class="row-title">'+escapeHtml(inc.source)+'</div>' +
+          '<div class="row-sub">'+fmtDate(inc.date)+'</div>' +
+        '</div>' +
+        '<div class="row-amt income num">+'+fmtMoney(inc.amount)+'</div>' +
+        '<button class="row-del" data-id="'+inc.id+'">×</button>';
+      list.appendChild(row);
+    });
+    list.querySelectorAll('.row-del').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.getAttribute('data-id');
+        month.income = month.income.filter(function(i){ return i.id !== id; });
+        saveData();
+        renderAll();
+      });
+    });
+  }
+
+  function renderExpenses(){
+    var month = ensureMonth(currentMonthKey);
+    var list = document.getElementById('expenseList');
+    list.innerHTML = '';
+    if(month.expenses.length === 0){
+      list.innerHTML = '<div class="empty">No expenses logged this month.</div>';
+      return;
+    }
+    month.expenses.slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); }).forEach(function(exp){
+      var card = cardById(exp.cardId);
+      var row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML =
+        '<div class="row-main">' +
+          '<div class="row-title">'+escapeHtml(exp.desc)+(exp.recurringId ? ' ↻' : '')+'</div>' +
+          '<div class="row-sub">'+fmtDate(exp.date)+
+            (exp.category ? ' · <span class="cat-tag">'+escapeHtml(exp.category)+'</span>' : '') +
+            (card ? ' <span class="card-tag">'+escapeHtml(card.name)+'</span>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="row-amt expense num">-'+fmtMoney(exp.amount)+'</div>' +
+        '<button class="row-del" data-id="'+exp.id+'">×</button>';
+      list.appendChild(row);
+    });
+    list.querySelectorAll('.row-del').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.getAttribute('data-id');
+        month.expenses = month.expenses.filter(function(e){ return e.id !== id; });
+        saveData();
+        renderAll();
+      });
+    });
+  }
+
+  function renderSummary(){
+    var totals = monthTotals(currentMonthKey);
+    var net = totals.income - totals.expenses;
+    document.getElementById('sumIncome').textContent = fmtMoney(totals.income);
+    document.getElementById('sumExpense').textContent = fmtMoney(totals.expenses);
+    var netEl = document.getElementById('sumNet');
+    netEl.textContent = (net >= 0 ? '+' : '-') + fmtMoney(net);
+    netEl.classList.remove('net-pos','net-neg');
+    netEl.classList.add(net >= 0 ? 'net-pos' : 'net-neg');
+  }
+
+  function renderTrend(){
+    var keys = [];
+    var k = currentMonthKey;
+    for(var i=0; i<6; i++){ keys.unshift(k); k = shiftKey(k, -1); }
+    var list = document.getElementById('trendList');
+    list.innerHTML = '';
+    var sixMonthTotal = 0;
+    keys.forEach(function(mk){
+      var totals = monthTotals(mk);
+      var net = totals.income - totals.expenses;
+      sixMonthTotal += net;
+      var parts = mk.split('-');
+      var label = MONTH_ABBR[parseInt(parts[1])-1] + ' ' + parts[0];
+      var row = document.createElement('div');
+      row.className = 'trend-row';
+      row.innerHTML =
+        '<span class="m-label'+(mk === currentMonthKey ? ' current' : '')+'">'+label+'</span>' +
+        '<span class="m-val num '+(net >= 0 ? 'net-pos' : 'net-neg')+'">'+(net >= 0 ? '+' : '-')+fmtMoney(net)+'</span>';
+      list.appendChild(row);
+    });
+    var totalEl = document.getElementById('trendTotal');
+    totalEl.innerHTML =
+      '<span>6-month total</span>' +
+      '<span class="num '+(sixMonthTotal >= 0 ? 'net-pos' : 'net-neg')+'">'+(sixMonthTotal >= 0 ? '+' : '-')+fmtMoney(sixMonthTotal)+'</span>';
+  }
+
+  function escapeHtml(str){
+    var div = document.createElement('div');
+    div.textContent = str == null ? '' : str;
+    return div.innerHTML;
+  }
+
+  function renderAll(){
+    populateRecurring(currentMonthKey);
+    renderMonthLabel();
+    renderCategoryOptions();
+    renderCards();
+    renderIncome();
+    renderExpenses();
+    renderRecurring();
+    renderSummary();
+    renderTrend();
+  }
+
+  // ---------- Month navigation ----------
+  function shiftMonth(delta){
+    currentMonthKey = shiftKey(currentMonthKey, delta);
+    renderAll();
+  }
+  document.getElementById('prevMonth').addEventListener('click', function(){ shiftMonth(-1); });
+  document.getElementById('nextMonth').addEventListener('click', function(){ shiftMonth(1); });
+  document.getElementById('monthLabel').addEventListener('click', function(){
+    document.getElementById('monthPicker').classList.toggle('open');
+  });
+  document.getElementById('monthInput').addEventListener('change', function(e){
+    currentMonthKey = e.target.value;
+    document.getElementById('monthPicker').classList.remove('open');
+    renderAll();
+  });
+
+  // ---------- Form toggles ----------
+  function wireToggle(btnId, formId){
+    document.getElementById(btnId).addEventListener('click', function(){
+      document.getElementById(formId).classList.toggle('open');
+    });
+  }
+  wireToggle('toggleCardForm','cardForm');
+  wireToggle('toggleRecurForm','recurForm');
+  wireToggle('toggleIncomeForm','incomeForm');
+  wireToggle('toggleExpenseForm','expenseForm');
+  document.getElementById('cancelCard').addEventListener('click', function(){ document.getElementById('cardForm').classList.remove('open'); });
+  document.getElementById('cancelRecur').addEventListener('click', function(){ document.getElementById('recurForm').classList.remove('open'); });
+  document.getElementById('cancelIncome').addEventListener('click', function(){ document.getElementById('incomeForm').classList.remove('open'); });
+  document.getElementById('cancelExpense').addEventListener('click', function(){ document.getElementById('expenseForm').classList.remove('open'); });
+
+  // ---------- Card swatches ----------
+  var selectedSwatch = SWATCH_COLORS[0];
+  function renderSwatches(){
+    var wrap = document.getElementById('cardSwatches');
+    wrap.innerHTML = '';
+    SWATCH_COLORS.forEach(function(color){
+      var sw = document.createElement('div');
+      sw.className = 'swatch' + (color === selectedSwatch ? ' sel' : '');
+      sw.style.background = color;
+      sw.addEventListener('click', function(){
+        selectedSwatch = color;
+        renderSwatches();
+      });
+      wrap.appendChild(sw);
+    });
+  }
+  renderSwatches();
+
+  // ---------- Save handlers ----------
+  document.getElementById('saveCard').addEventListener('click', function(){
+    var name = document.getElementById('cardName').value.trim();
+    if(!name) return;
+    data.cards.push({ id: uid(), name: name, color: selectedSwatch });
+    saveData();
+    document.getElementById('cardName').value = '';
+    document.getElementById('cardForm').classList.remove('open');
+    renderAll();
+  });
+
+  document.getElementById('saveRecur').addEventListener('click', function(){
+    var name = document.getElementById('recurName').value.trim();
+    var amount = parseFloat(document.getElementById('recurAmount').value);
+    var day = parseInt(document.getElementById('recurDay').value) || 1;
+    var category = document.getElementById('recurCategory').value.trim();
+    var cardId = document.getElementById('recurCard').value;
+    if(!name || isNaN(amount)) return;
+    data.recurring.push({ id: uid(), name: name, amount: amount, day: day, cardId: cardId, category: category });
+    saveData();
+    document.getElementById('recurName').value = '';
+    document.getElementById('recurAmount').value = '';
+    document.getElementById('recurDay').value = '';
+    document.getElementById('recurCategory').value = '';
+    document.getElementById('recurForm').classList.remove('open');
+    renderAll();
+  });
+
+  document.getElementById('saveIncome').addEventListener('click', function(){
+    var source = document.getElementById('incomeSource').value.trim();
+    var amount = parseFloat(document.getElementById('incomeAmount').value);
+    var dateVal = document.getElementById('incomeDate').value || (currentMonthKey + '-01');
+    if(!source || isNaN(amount)) return;
+    var month = ensureMonth(currentMonthKey);
+    month.income.push({ id: uid(), source: source, amount: amount, date: dateVal });
+    saveData();
+    document.getElementById('incomeSource').value = '';
+    document.getElementById('incomeAmount').value = '';
+    document.getElementById('incomeDate').value = '';
+    document.getElementById('incomeForm').classList.remove('open');
+    renderAll();
+  });
+
+  document.getElementById('saveExpense').addEventListener('click', function(){
+    var desc = document.getElementById('expenseDesc').value.trim();
+    var amount = parseFloat(document.getElementById('expenseAmount').value);
+    var category = document.getElementById('expenseCategory').value.trim();
+    var dateVal = document.getElementById('expenseDate').value || (currentMonthKey + '-01');
+    var cardId = document.getElementById('expenseCard').value;
+    if(!desc || isNaN(amount)) return;
+    // auto-associate card if description matches a recurring template name and no card chosen
+    if(!cardId){
+      var match = data.recurring.find(function(r){ return r.name.trim().toLowerCase() === desc.toLowerCase(); });
+      if(match && match.cardId) cardId = match.cardId;
+      if(match && !category && match.category) category = match.category;
+    }
+    var month = ensureMonth(currentMonthKey);
+    month.expenses.push({ id: uid(), desc: desc, amount: amount, date: dateVal, cardId: cardId, category: category });
+    saveData();
+    document.getElementById('expenseDesc').value = '';
+    document.getElementById('expenseAmount').value = '';
+    document.getElementById('expenseCategory').value = '';
+    document.getElementById('expenseDate').value = '';
+    document.getElementById('expenseForm').classList.remove('open');
+    renderAll();
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
